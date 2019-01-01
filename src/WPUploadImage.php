@@ -50,7 +50,7 @@ namespace WaughJ\WPUploadImage
 
 		public static function filterUploadDir( string $url ) : string
 		{
-			return str_replace( wp_upload_dir()[ 'url' ], '', $url );
+			return str_replace( wp_upload_dir()[ 'baseurl' ], '', $url );
 		}
 
 		private static function getSrcsetAndSizes( int $id, array $image_sizes, array $attributes ) : array
