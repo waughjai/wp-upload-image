@@ -32,8 +32,7 @@ namespace WaughJ\WPUploadImage
 
 			if ( $src )
 			{
-				$src = self::filterUploadDir( $src );
-				parent::__construct( $src, self::getFileLoader(), $attributes );
+				parent::__construct( $src, null, $attributes );
 			}
 			else
 			{
@@ -68,7 +67,7 @@ namespace WaughJ\WPUploadImage
 				{
 					break;
 				}
-				$src_strings[] = self::filterUploadDir( $url ) . " {$width}w";
+				$src_strings[] = $url . " {$width}w";
 				$size_strings[] = ( $i === $number_of_sizes - 1 )
 					? "{$width}px"
 					: "(max-width: {$width}px) {$width}px";
