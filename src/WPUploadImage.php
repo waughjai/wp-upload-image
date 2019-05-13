@@ -32,7 +32,7 @@ namespace WaughJ\WPUploadImage
 				else
 				{
 					$image = wp_get_attachment_image_src( $id, $size );
-					$src = ( $image ) ? self::getFormattedURL( $image, $attributes ) : null;
+					$src = ( $image ) ? self::getFormattedURL( $image, self::testShowVersion( $attributes ) ) : null;
 				}
 
 				if ( $src )
@@ -51,10 +51,10 @@ namespace WaughJ\WPUploadImage
 				self::$loader = new FileLoader([ 'directory-url' => $uploads[ 'url' ], 'directory-server' => $uploads[ 'path' ] ]);
 			}
 
-			public static function getFormattedURL( array &$wp_image_source_object, array &$attributes ) : string
+			public static function getFormattedURL( array &$wp_image_source_object, bool $show_version ) : string
 			{
 				$local_url = self::turnAbsolutePathIntoLocal( $wp_image_source_object[ 0 ] );
-				return ( self::testShowVersion( $attributes ) ) ? self::$loader->getSourceWithVersion( $local_url ) : self::$loader->getSource( $local_url );
+				return ( $show_version ) ? self::$loader->getSourceWithVersion( $local_url ) : self::$loader->getSource( $local_url );
 			}
 
 			public static function getFileLoader() : FileLoader
@@ -80,7 +80,7 @@ namespace WaughJ\WPUploadImage
 				{
 					$wp_image_source_object = wp_get_attachment_image_src( $id, $image_sizes[ $i ]->getSlug() );
 
-					$url = self::getFormattedURL( $wp_image_source_object, $attributes );
+					$url = self::getFormattedURL( $wp_image_source_object, self::testShowVersion( $attributes ) );
 
 					// Full-size image may be smaller than max size in uploads setting,
 					// so we may reach the last image before going through all o' the sizes.
