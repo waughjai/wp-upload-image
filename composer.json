@@ -12,13 +12,13 @@
     "type": "library",
     "require": {
 		"php": ">=7.0",
-        "waughj/file-loader": ">=0.2.0",
+        "waughj/file-loader": ">=0.5.0",
         "waughj/html-image": ">=0.3.0",
 		"waughj/test-hash-item": "*",
 		"waughj/wp-get-image-sizes": "*"
     },
     "require-dev": {
-		"phpunit/phpunit": "6.*"
+		"phpunit/phpunit": "*"
     },
     "autoload": {
         "psr-4": {

@@ -10,72 +10,109 @@ namespace WaughJ\WPUploadImage
 
 	class WPUploadImage extends HTMLImage
 	{
-		public function __construct( int $id, string $size = null, array $attributes = [] )
-		{
-			if ( $size === null ) { $size = 'full'; };
+		//
+		//  PUBLIC
+		//
+		/////////////////////////////////////////////////////////
 
-			if ( $size === 'responsive' )
+			public function __construct( int $id, string $size = null, array $attributes = [] )
 			{
-				$image_sizes = WPGetImageSizes();
-				$image = wp_get_attachment_image_src( $id, $image_sizes[ 0 ]->getSlug() );
-				$src = $image[ 0 ];
+				if ( $size === null ) { $size = 'full'; };
+
+				if ( $size === 'responsive' )
+				{
+					$image_sizes = WPGetImageSizes();
+					$image = wp_get_attachment_image_src( $id, $image_sizes[ 0 ]->getSlug() );
+					$src = $image[ 0 ];
+					if ( $src )
+					{
+						self::setSrcsetAndSizes( $id, $image_sizes, $attributes );
+					}
+				}
+				else
+				{
+					$image = wp_get_attachment_image_src( $id, $size );
+					$src = ( $image ) ? self::getFormattedURL( $image, $attributes ) : null;
+				}
+
 				if ( $src )
 				{
-					$attributes = self::getSrcsetAndSizes( $id, $image_sizes, $attributes );
+					parent::__construct( $src, null, $attributes );
 				}
-			}
-			else
-			{
-				$image = wp_get_attachment_image_src( $id, $size );
-				$src = $image[ 0 ];
-			}
-
-			if ( $src )
-			{
-				parent::__construct( $src, null, $attributes );
-			}
-			else
-			{
-				parent::__construct( '' );
-			}
-		}
-
-		public static function getFileLoader() : FileLoader
-		{
-			$uploads = wp_upload_dir();
-			$loader = new FileLoader([ 'directory-url' => $uploads[ 'url' ], 'directory-server' => $uploads[ 'path' ] ]);
-			return $loader;
-		}
-
-		public static function filterUploadDir( string $url ) : string
-		{
-			return str_replace( wp_upload_dir()[ 'baseurl' ], '', $url );
-		}
-
-		private static function getSrcsetAndSizes( int $id, array $image_sizes, array $attributes ) : array
-		{
-			$src_strings = [];
-			$size_strings = [];
-			$number_of_sizes = count( $image_sizes );
-			$prev_width = -1;
-			for ( $i = 0; $i < $number_of_sizes; $i++ )
-			{
-				$size = wp_get_attachment_image_src( $id, $image_sizes[ $i ]->getSlug() );
-				$url = $size[ 0 ];
-				$width = $size[ 1 ];
-				if ( $prev_width === $width )
+				else
 				{
-					break;
+					parent::__construct( '' );
 				}
-				$src_strings[] = $url . " {$width}w";
-				$size_strings[] = ( $i === $number_of_sizes - 1 )
-					? "{$width}px"
-					: "(max-width: {$width}px) {$width}px";
-				$prev_width = $width;
 			}
-			$attributes[ 'srcset' ] = implode( ', ', $src_strings );
-			$attributes[ 'sizes' ] = implode( ', ', $size_strings );
-			return $attributes;
+
+			public static function init() : void
+			{
+				$uploads = wp_upload_dir();
+				self::$loader = new FileLoader([ 'directory-url' => $uploads[ 'url' ], 'directory-server' => $uploads[ 'path' ] ]);
+			}
+
+			public static function getFileLoader() : FileLoader
+			{
+				return self::$loader;
+			}
+
+
+
+		//
+		//  PUBLIC
+		//
+		/////////////////////////////////////////////////////////
+
+			private static function setSrcsetAndSizes( int $id, array &$image_sizes, array &$attributes ) : void
+			{
+				$srcset_strings = [];
+				$size_strings = [];
+
+				$prev_width = -1;
+				$number_of_sizes = count( $image_sizes );
+				for ( $i = 0; $i < $number_of_sizes; $i++ )
+				{
+					$wp_image_source_object = wp_get_attachment_image_src( $id, $image_sizes[ $i ]->getSlug() );
+
+					$url = self::getFormattedURL( $wp_image_source_object, $attributes );
+
+					// Full-size image may be smaller than max size in uploads setting,
+					// so we may reach the last image before going through all o' the sizes.
+					// If we do, end loop now.
+					$width = $wp_image_source_object[ 1 ];
+					if ( $prev_width === $width )
+					{
+						break;
+					}
+					$prev_width = $width;
+
+					$srcset_strings[] = "{$url} {$width}w";
+					$is_last_size = ( $i === $number_of_sizes - 1 );
+					$size_strings[] = ( $is_last_size ) ? "{$width}px" : "(max-width: {$width}px) {$width}px";
+				}
+
+				// Stringify srcs & sizes to be used as HTML attributes.
+				$attributes[ 'srcset' ] = implode( ', ', $srcset_strings );
+				$attributes[ 'sizes' ] = implode( ', ', $size_strings );
+			}
+
+			private static function getFormattedURL( array &$wp_image_source_object, array &$attributes ) : string
+			{
+				$local_url = self::turnAbsolutePathIntoLocal( $wp_image_source_object[ 0 ] );
+				return ( self::testShowVersion( $attributes ) ) ? self::$loader->getSourceWithVersion( $local_url ) : self::$loader->getSource( $local_url );
+			}
+
+			private static function turnAbsolutePathIntoLocal( string $absolute ) : string
+			{
+				return str_replace( self::$loader->getDirectoryURL()->getStringURL(), '', $absolute );
+			}
+
+			private static function testShowVersion( array &$attributes ) : bool
+			{
+				return !array_key_exists( 'show-version', $attributes ) || $attributes[ 'show-version' ];
+			}
+
+			private static $loader;
 		}
-	}
+		WPUploadImage::init();
 }
