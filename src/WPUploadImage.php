@@ -51,6 +51,12 @@ namespace WaughJ\WPUploadImage
 				self::$loader = new FileLoader([ 'directory-url' => $uploads[ 'url' ], 'directory-server' => $uploads[ 'path' ] ]);
 			}
 
+			public static function getFormattedURL( array &$wp_image_source_object, array &$attributes ) : string
+			{
+				$local_url = self::turnAbsolutePathIntoLocal( $wp_image_source_object[ 0 ] );
+				return ( self::testShowVersion( $attributes ) ) ? self::$loader->getSourceWithVersion( $local_url ) : self::$loader->getSource( $local_url );
+			}
+
 			public static function getFileLoader() : FileLoader
 			{
 				return self::$loader;
@@ -94,12 +100,6 @@ namespace WaughJ\WPUploadImage
 				// Stringify srcs & sizes to be used as HTML attributes.
 				$attributes[ 'srcset' ] = implode( ', ', $srcset_strings );
 				$attributes[ 'sizes' ] = implode( ', ', $size_strings );
-			}
-
-			private static function getFormattedURL( array &$wp_image_source_object, array &$attributes ) : string
-			{
-				$local_url = self::turnAbsolutePathIntoLocal( $wp_image_source_object[ 0 ] );
-				return ( self::testShowVersion( $attributes ) ) ? self::$loader->getSourceWithVersion( $local_url ) : self::$loader->getSource( $local_url );
 			}
 
 			private static function turnAbsolutePathIntoLocal( string $absolute ) : string
