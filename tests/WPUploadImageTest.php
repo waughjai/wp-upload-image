@@ -1,6 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
+use WaughJ\FileLoader\MissingFileException;
 use WaughJ\WPUploadImage\WPUploadImage;
 
 require_once( 'MockWordPress.php' );
@@ -48,5 +49,21 @@ class WPUploadImageTest extends TestCase
 		$image = new WPUploadImage( 1, null, [ 'class' => 'center-img portrait', 'width' => 800, 'height' => 600, 'alt' => 'King', 'id' => 'king-img', 'show-version' => false ] );
 		$this->assertStringNotContainsString( '?m=', $image->getHTML() );
 		$this->assertStringNotContainsString( ' show-version="', $image->getHTML() );
+	}
+
+	public function testBasicMissingImage()
+	{
+		try
+		{
+			$image = new WPUploadImage( 3 );
+		}
+		catch ( MissingFileException $e )
+		{
+			$image = $e->getFallbackContent();
+		}
+
+		$this->assertStringContainsString( ' src="https://www.example.com/wp-content/uploads/2018/12/jack.jpg"', $image->getHTML() );
+		$this->assertStringContainsString( ' alt="" />', $image->getHTML() );
+		$this->assertStringNotContainsString( '?m=', $image->getHTML() );
 	}
 }

@@ -15,7 +15,8 @@
 	[
 		[],
 		[ 'src' => 'demo', 'ext' => 'png' ],
-		[ 'src' => 'photo', 'ext' => 'jpg' ]
+		[ 'src' => 'photo', 'ext' => 'jpg' ],
+		[ 'src' => 'jack', 'ext' => 'jpg' ]
 	];
 
 	function get_intermediate_image_sizes()
@@ -35,15 +36,15 @@
 
 	function get_stylesheet_directory()
 	{
-		return getcwd();
+		return getcwd() . '/tests';
 	}
 
 	function wp_upload_dir()
 	{
 		return
 		[
-			'basedir' => getcwd(),
-			'path' => getcwd() . '/2018/12',
+			'basedir' => getcwd() . '/tests',
+			'path' => getcwd() . '/tests/2018/12',
 			'baseurl' => 'https://www.example.com/wp-content/uploads',
 			'url' => 'https://www.example.com/wp-content/uploads/2018/12'
 		];

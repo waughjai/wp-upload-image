@@ -4,9 +4,9 @@ declare( strict_types = 1 );
 namespace WaughJ\WPUploadImage
 {
 	use WaughJ\HTMLImage\HTMLImage;
-	use WaughJ\FileLoader\FileLoader;
+	use WaughJ\FileLoader\FileLoader;;
+	use WaughJ\FileLoader\MissingFileException;
 	use function WaughJ\WPGetImageSizes\WPGetImageSizes;
-	use function WaughJ\TestHashItem\TestHashItemExists;
 
 	class WPUploadImage extends HTMLImage
 	{
@@ -17,6 +17,8 @@ namespace WaughJ\WPUploadImage
 
 			public function __construct( int $id, string $size = null, array $attributes = [] )
 			{
+				$show_version = $attributes[ 'show-version' ] ?? true;
+
 				if ( $size === null ) { $size = 'full'; };
 
 				if ( $size === 'responsive' )
@@ -26,13 +28,27 @@ namespace WaughJ\WPUploadImage
 					$src = $image[ 0 ];
 					if ( $src )
 					{
-						self::setSrcsetAndSizes( $id, $image_sizes, $attributes );
+						try
+						{
+							$attributes = self::setSrcsetAndSizes( $id, $image_sizes, $attributes, $show_version );
+						}
+						catch ( MissingFileException $e )
+						{
+							throw new MissingFileException( $e->getFilename(), new HTMLImage( $src, null, $e->getFallbackContent() ) );
+						}
 					}
 				}
 				else
 				{
 					$image = wp_get_attachment_image_src( $id, $size );
-					$src = ( $image ) ? self::getFormattedURL( $image, self::testShowVersion( $attributes ) ) : null;
+					try
+					{
+						$src = ( $image ) ? self::getFormattedURL( $image, $show_version ) : null;
+					}
+					catch ( MissingFileException $e )
+					{
+						throw new MissingFileException( $e->getFilename(), new HTMLImage( $e->getFallbackContent(), null, $attributes ) );
+					}
 				}
 
 				if ( $src )
@@ -69,8 +85,9 @@ namespace WaughJ\WPUploadImage
 		//
 		/////////////////////////////////////////////////////////
 
-			private static function setSrcsetAndSizes( int $id, array &$image_sizes, array &$attributes ) : void
+			private static function setSrcsetAndSizes( int $id, array $image_sizes, array $attributes, bool $show_version ) : array
 			{
+				$missing_urls = [];
 				$srcset_strings = [];
 				$size_strings = [];
 
@@ -80,7 +97,15 @@ namespace WaughJ\WPUploadImage
 				{
 					$wp_image_source_object = wp_get_attachment_image_src( $id, $image_sizes[ $i ]->getSlug() );
 
-					$url = self::getFormattedURL( $wp_image_source_object, self::testShowVersion( $attributes ) );
+					try
+					{
+						$url = self::getFormattedURL( $wp_image_source_object, $show_version );
+					}
+					catch ( MissingFileException $e )
+					{
+						$missing_urls[] = $e->getFilename();
+						$url = $e->getFallbackContent();
+					}
 
 					// Full-size image may be smaller than max size in uploads setting,
 					// so we may reach the last image before going through all o' the sizes.
@@ -100,16 +125,18 @@ namespace WaughJ\WPUploadImage
 				// Stringify srcs & sizes to be used as HTML attributes.
 				$attributes[ 'srcset' ] = implode( ', ', $srcset_strings );
 				$attributes[ 'sizes' ] = implode( ', ', $size_strings );
+
+				if ( !empty( $missing_urls ) )
+				{
+					throw new MissingFileException( $missing_urls, $attributes );
+				}
+
+				return $attributes;
 			}
 
 			private static function turnAbsolutePathIntoLocal( string $absolute ) : string
 			{
 				return str_replace( self::$loader->getDirectoryURL()->getStringURL(), '', $absolute );
-			}
-
-			private static function testShowVersion( array &$attributes ) : bool
-			{
-				return !array_key_exists( 'show-version', $attributes ) || $attributes[ 'show-version' ];
 			}
 
 			private static $loader;
