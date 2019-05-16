@@ -16,6 +16,13 @@ class WPUploadImageTest extends TestCase
 		$this->assertStringContainsString( ' alt="" />', $image->getHTML() );
 	}
 
+	public function testBasicResponsive()
+	{
+		$image = new WPUploadImage( 2, 'responsive' );
+		$this->assertStringContainsString( ' src="https://www.example.com/wp-content/uploads/2018/12/photo-150x150.jpg?m=', $image->getHTML() );
+		$this->assertStringNotContainsString( '.jpg"', $image->getHTML() );
+	}
+
 	public function testNonexistentImage()
 	{
 		$this->expectException( WPMissingMediaException::class );
@@ -78,5 +85,32 @@ class WPUploadImageTest extends TestCase
 		$this->assertStringContainsString( ' src="https://www.example.com/wp-content/uploads/2018/12/jack.jpg"', $image->getHTML() );
 		$this->assertStringContainsString( ' alt="" />', $image->getHTML() );
 		$this->assertStringNotContainsString( '?m=', $image->getHTML() );
+	}
+
+	public function testBasicMissingImageResponsive()
+	{
+		try
+		{
+			$image = new WPUploadImage( 4, 'responsive' );
+		}
+		catch ( MissingFileException $e )
+		{
+			$image = $e->getFallbackContent();
+		}
+
+		$this->assertStringContainsString( ' src="https://www.example.com/wp-content/uploads/2018/12/back-150x150.jpg?m=', $image->getHTML() );
+		$this->assertStringContainsString( 'https://www.example.com/wp-content/uploads/2018/12/back-300x300.jpg ', $image->getHTML() );
+
+		try
+		{
+			$image = new WPUploadImage( 3, 'responsive' );
+		}
+		catch ( MissingFileException $e )
+		{
+			$image = $e->getFallbackContent();
+		}
+
+		$this->assertStringContainsString( ' src="https://www.example.com/wp-content/uploads/2018/12/jack-150x150.jpg"', $image->getHTML() );
+		$this->assertStringContainsString( 'https://www.example.com/wp-content/uploads/2018/12/jack-300x300.jpg?m=', $image->getHTML() );
 	}
 }

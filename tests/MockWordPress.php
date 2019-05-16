@@ -16,7 +16,8 @@
 		[],
 		[ 'src' => 'demo', 'ext' => 'png' ],
 		[ 'src' => 'photo', 'ext' => 'jpg' ],
-		[ 'src' => 'jack', 'ext' => 'jpg' ]
+		[ 'src' => 'jack', 'ext' => 'jpg' ],
+		[ 'src' => 'back', 'ext' => 'jpg' ]
 	];
 
 	function get_intermediate_image_sizes()

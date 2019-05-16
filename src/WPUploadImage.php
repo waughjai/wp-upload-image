@@ -17,46 +17,46 @@ class WPUploadImage extends HTMLImage
 
 		public function __construct( int $id, string $size = null, array $attributes = [] )
 		{
+			$missing_urls = [];
 			$show_version = $attributes[ 'show-version' ] ?? true;
 
 			if ( $size === null ) { $size = 'full'; };
 
+			// Configure fallback source.
+			$image_sizes = WPGetImageSizes();
+			$image = ( $size === 'responsive' ) ? wp_get_attachment_image_src( $id, $image_sizes[ 0 ]->getSlug() ) : wp_get_attachment_image_src( $id, $size );
+			if ( $image === false )
+			{
+				throw new WPMissingMediaException( $id );
+			}
+
+			// If responsive, configure srcset.
 			if ( $size === 'responsive' )
 			{
-				$image_sizes = WPGetImageSizes();
-				$image = wp_get_attachment_image_src( $id, $image_sizes[ 0 ]->getSlug() );
-
-				if ( $image === false )
-				{
-					throw new WPMissingMediaException( $id );
-				}
-
-				$src = $image[ 0 ];
 				try
 				{
 					$attributes = self::setSrcsetAndSizes( $id, $image_sizes, $attributes, $show_version );
 				}
 				catch ( MissingFileException $e )
 				{
-					throw new MissingFileException( $e->getFilename(), new HTMLImage( $src, null, $e->getFallbackContent() ) );
+					array_merge( $missing_urls, $e->getFilename() );
+					$attributes = $e->getFallbackContent();
 				}
 			}
-			else
-			{
-				$image = wp_get_attachment_image_src( $id, $size );
-				if ( $image === false )
-				{
-					throw new WPMissingMediaException( $id );
-				}
 
-				try
-				{
-					$src = self::getFormattedURL( $image, $show_version );
-				}
-				catch ( MissingFileException $e )
-				{
-					throw new MissingFileException( $e->getFilename(), new HTMLImage( $e->getFallbackContent(), null, $attributes ) );
-				}
+			try
+			{
+				$src = self::getFormattedURL( $image, $show_version );
+			}
+			catch ( MissingFileException $e )
+			{
+				$missing_urls[] = $e->getFilename();
+				$src = $e->getFallbackContent();
+			}
+
+			if ( !empty( $missing_urls ) )
+			{
+				throw new MissingFileException( $missing_urls, new HTMLImage( $src, null, $attributes ) );
 			}
 
 			parent::__construct( $src, null, $attributes );
