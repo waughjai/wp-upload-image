@@ -83,7 +83,7 @@
 					WP_OPTIONS[ "{$size}_size_h" ]
 				];
 		}
-		return null;
+		return false;
 	}
 
 	global $settings_fields;

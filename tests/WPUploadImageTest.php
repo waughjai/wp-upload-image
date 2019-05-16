@@ -2,6 +2,7 @@
 
 use PHPUnit\Framework\TestCase;
 use WaughJ\FileLoader\MissingFileException;
+use WaughJ\WPUploadImage\WPMissingMediaException;
 use WaughJ\WPUploadImage\WPUploadImage;
 
 require_once( 'MockWordPress.php' );
@@ -17,8 +18,20 @@ class WPUploadImageTest extends TestCase
 
 	public function testNonexistentImage()
 	{
+		$this->expectException( WPMissingMediaException::class );
 		$image = new WPUploadImage( 33 );
-		$this->assertEquals( $image->getHTML(), '<img src="" alt="" />' );
+	}
+
+	public function testNonexistentImageID()
+	{
+		try
+		{
+			$image = new WPUploadImage( 33 );
+		}
+		catch ( WPMissingMediaException $e )
+		{
+			$this->assertEquals( 33, $e->getMissingIDs()[ 0 ] );
+		}
 	}
 
 	public function testWithSpecialSize()

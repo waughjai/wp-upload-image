@@ -25,25 +25,33 @@ class WPUploadImage extends HTMLImage
 			{
 				$image_sizes = WPGetImageSizes();
 				$image = wp_get_attachment_image_src( $id, $image_sizes[ 0 ]->getSlug() );
-				$src = $image[ 0 ];
-				if ( $src )
+
+				if ( $image === false )
 				{
-					try
-					{
-						$attributes = self::setSrcsetAndSizes( $id, $image_sizes, $attributes, $show_version );
-					}
-					catch ( MissingFileException $e )
-					{
-						throw new MissingFileException( $e->getFilename(), new HTMLImage( $src, null, $e->getFallbackContent() ) );
-					}
+					throw new WPMissingMediaException( $id );
+				}
+
+				$src = $image[ 0 ];
+				try
+				{
+					$attributes = self::setSrcsetAndSizes( $id, $image_sizes, $attributes, $show_version );
+				}
+				catch ( MissingFileException $e )
+				{
+					throw new MissingFileException( $e->getFilename(), new HTMLImage( $src, null, $e->getFallbackContent() ) );
 				}
 			}
 			else
 			{
 				$image = wp_get_attachment_image_src( $id, $size );
+				if ( $image === false )
+				{
+					throw new WPMissingMediaException( $id );
+				}
+
 				try
 				{
-					$src = ( $image ) ? self::getFormattedURL( $image, $show_version ) : null;
+					$src = self::getFormattedURL( $image, $show_version );
 				}
 				catch ( MissingFileException $e )
 				{
@@ -51,14 +59,7 @@ class WPUploadImage extends HTMLImage
 				}
 			}
 
-			if ( $src )
-			{
-				parent::__construct( $src, null, $attributes );
-			}
-			else
-			{
-				parent::__construct( '' );
-			}
+			parent::__construct( $src, null, $attributes );
 		}
 
 		public static function init() : void
