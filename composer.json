@@ -13,7 +13,7 @@
     "require": {
 		"php": ">=7.0",
         "waughj/file-loader": ">=0.5.3",
-        "waughj/html-image": ">=0.7.0",
+        "waughj/html-image": ">=0.9.1",
 		"waughj/wp-get-image-sizes": "*"
     },
     "require-dev": {

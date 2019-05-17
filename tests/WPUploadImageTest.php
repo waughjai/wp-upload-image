@@ -99,7 +99,9 @@ class WPUploadImageTest extends TestCase
 		}
 
 		$this->assertStringContainsString( ' src="https://www.example.com/wp-content/uploads/2018/12/back-150x150.jpg?m=', $image->getHTML() );
+		$this->assertStringContainsString( ' srcset="https://www.example.com/wp-content/uploads/2018/12/back-150x150.jpg?m=', $image->getHTML() );
 		$this->assertStringContainsString( 'https://www.example.com/wp-content/uploads/2018/12/back-300x300.jpg ', $image->getHTML() );
+		$this->assertStringContainsString( ' sizes="(max-width: 150px) 150px, (max-width: 300px) 300px, (max-width: 768px) 768px, 1024px', $image->getHTML() );
 
 		try
 		{
@@ -112,5 +114,6 @@ class WPUploadImageTest extends TestCase
 
 		$this->assertStringContainsString( ' src="https://www.example.com/wp-content/uploads/2018/12/jack-150x150.jpg"', $image->getHTML() );
 		$this->assertStringContainsString( 'https://www.example.com/wp-content/uploads/2018/12/jack-300x300.jpg?m=', $image->getHTML() );
+		$this->assertStringContainsString( ' sizes="(max-width: 150px) 150px, (max-width: 300px) 300px, (max-width: 768px) 768px, 1024px', $image->getHTML() );
 	}
 }

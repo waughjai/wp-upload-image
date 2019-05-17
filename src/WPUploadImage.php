@@ -17,9 +17,6 @@ class WPUploadImage extends HTMLImage
 
 		public function __construct( int $id, string $size = null, array $attributes = [] )
 		{
-			$missing_urls = [];
-			$show_version = $attributes[ 'show-version' ] ?? true;
-
 			if ( $size === null ) { $size = 'full'; };
 
 			// Configure fallback source.
@@ -33,45 +30,17 @@ class WPUploadImage extends HTMLImage
 			// If responsive, configure srcset.
 			if ( $size === 'responsive' )
 			{
-				try
-				{
-					$attributes = self::setSrcsetAndSizes( $id, $image_sizes, $attributes, $show_version );
-				}
-				catch ( MissingFileException $e )
-				{
-					array_merge( $missing_urls, $e->getFilename() );
-					$attributes = $e->getFallbackContent();
-				}
+				$attributes = self::setSrcsetAndSizes( $id, $image_sizes, $attributes );
 			}
 
-			try
-			{
-				$src = self::getFormattedURL( $image, $show_version );
-			}
-			catch ( MissingFileException $e )
-			{
-				$missing_urls[] = $e->getFilename();
-				$src = $e->getFallbackContent();
-			}
-
-			if ( !empty( $missing_urls ) )
-			{
-				throw new MissingFileException( $missing_urls, new HTMLImage( $src, null, $attributes ) );
-			}
-
-			parent::__construct( $src, null, $attributes );
+			$src = self::turnAbsolutePathIntoLocal( $image );
+			parent::__construct( $src, self::$loader, $attributes );
 		}
 
 		public static function init() : void
 		{
 			$uploads = wp_upload_dir();
 			self::$loader = new FileLoader([ 'directory-url' => $uploads[ 'url' ], 'directory-server' => $uploads[ 'path' ] ]);
-		}
-
-		public static function getFormattedURL( array &$wp_image_source_object, bool $show_version ) : string
-		{
-			$local_url = self::turnAbsolutePathIntoLocal( $wp_image_source_object[ 0 ] );
-			return ( $show_version ) ? self::$loader->getSourceWithVersion( $local_url ) : self::$loader->getSource( $local_url );
 		}
 
 		public static function getFileLoader() : FileLoader
@@ -86,27 +55,16 @@ class WPUploadImage extends HTMLImage
 	//
 	/////////////////////////////////////////////////////////
 
-		private static function setSrcsetAndSizes( int $id, array $image_sizes, array $attributes, bool $show_version ) : array
+		private static function setSrcsetAndSizes( int $id, array $image_sizes, array $attributes ) : array
 		{
-			$missing_urls = [];
 			$srcset_strings = [];
-			$size_strings = [];
 
 			$prev_width = -1;
 			$number_of_sizes = count( $image_sizes );
 			for ( $i = 0; $i < $number_of_sizes; $i++ )
 			{
 				$wp_image_source_object = wp_get_attachment_image_src( $id, $image_sizes[ $i ]->getSlug() );
-
-				try
-				{
-					$url = self::getFormattedURL( $wp_image_source_object, $show_version );
-				}
-				catch ( MissingFileException $e )
-				{
-					$missing_urls[] = $e->getFilename();
-					$url = $e->getFallbackContent();
-				}
+				$url = self::turnAbsolutePathIntoLocal( $wp_image_source_object );
 
 				// Full-size image may be smaller than max size in uploads setting,
 				// so we may reach the last image before going through all o' the sizes.
@@ -119,25 +77,16 @@ class WPUploadImage extends HTMLImage
 				$prev_width = $width;
 
 				$srcset_strings[] = "{$url} {$width}w";
-				$is_last_size = ( $i === $number_of_sizes - 1 );
-				$size_strings[] = ( $is_last_size ) ? "{$width}px" : "(max-width: {$width}px) {$width}px";
 			}
 
-			// Stringify srcs & sizes to be used as HTML attributes.
+			// Stringify srcs to be used as HTML attributes.
 			$attributes[ 'srcset' ] = implode( ', ', $srcset_strings );
-			$attributes[ 'sizes' ] = implode( ', ', $size_strings );
-
-			if ( !empty( $missing_urls ) )
-			{
-				throw new MissingFileException( $missing_urls, $attributes );
-			}
-
 			return $attributes;
 		}
 
-		private static function turnAbsolutePathIntoLocal( string $absolute ) : string
+		private static function turnAbsolutePathIntoLocal( array $wp_image_source_object ) : string
 		{
-			return str_replace( self::$loader->getDirectoryURL()->getStringURL(), '', $absolute );
+			return str_replace( self::$loader->getDirectoryURL()->getStringURL(), '', $wp_image_source_object[ 0 ] );
 		}
 
 		private static $loader;
