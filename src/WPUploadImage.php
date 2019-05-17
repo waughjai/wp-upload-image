@@ -48,6 +48,11 @@ class WPUploadImage extends HTMLImage
 			return self::$loader;
 		}
 
+		public static function turnAbsolutePathIntoLocal( array $wp_image_source_object ) : string
+		{
+			return str_replace( self::$loader->getDirectoryURL()->getStringURL(), '', $wp_image_source_object[ 0 ] );
+		}
+
 
 
 	//
@@ -82,11 +87,6 @@ class WPUploadImage extends HTMLImage
 			// Stringify srcs to be used as HTML attributes.
 			$attributes[ 'srcset' ] = implode( ', ', $srcset_strings );
 			return $attributes;
-		}
-
-		private static function turnAbsolutePathIntoLocal( array $wp_image_source_object ) : string
-		{
-			return str_replace( self::$loader->getDirectoryURL()->getStringURL(), '', $wp_image_source_object[ 0 ] );
 		}
 
 		private static $loader;
