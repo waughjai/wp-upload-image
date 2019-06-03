@@ -40,7 +40,7 @@ class WPUploadImage extends HTMLImage
 		public static function init() : void
 		{
 			$uploads = wp_upload_dir();
-			self::$loader = new FileLoader([ 'directory-url' => $uploads[ 'url' ], 'directory-server' => $uploads[ 'path' ] ]);
+			self::$loader = new FileLoader([ 'directory-url' => $uploads[ 'baseurl' ], 'directory-server' => $uploads[ 'basedir' ] ]);
 		}
 
 		public static function getFileLoader() : FileLoader
