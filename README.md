@@ -13,6 +13,9 @@ If WordPress can’t find the media ID in its media database, then the construct
 
 ## Changelog
 
+### 0.5.3
+* Update TestHashItem dependency
+
 ### 0.5.2
 * Fix URL problems with date-based URLs
 
